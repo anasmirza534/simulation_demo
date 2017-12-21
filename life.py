@@ -1,20 +1,26 @@
+import random
 import sys
 from terminal import *
 
 def main():
     # Define grid
     (width, height) = get_term_size()
-    grid = [(width-5)*[0] for i in range(height-5)]
-
+    grid = [(width - 5) * [0] for i in range(height - 5)]
 
     # Draw initial grid
     update_screen(grid)
 
-    # Read initial config
-    read_initial_conf(grid)
+    # Ask for randomness
+    prompt = ('Randomness (y or Y) for yes else anything: ')
+    cmd = raw_input('%s' % (prompt))
+    if cmd in ['y', 'Y']:
+        read_initial_conf_random(grid)
+    else:
+        # Read initial config
+        read_initial_conf(grid)
 
     # Step through grid
-    prompt = ('ITER %d: Type anything to continue, the number of steps to ' + 
+    prompt = ('ITER %d: Type anything to continue, the number of steps to ' +
               'perform (or quit to exit): ')
     iter_step = 1
     update_screen(grid)
@@ -30,7 +36,7 @@ def main():
             pass
         for i in range(batch_steps):
             # Define auxiliary grid matrix
-            new_grid = [len(grid[0])*[0] for i in range(len(grid))]
+            new_grid = [len(grid[0]) * [0] for i in range(len(grid))]
             # Update grid
             next_step(grid, new_grid)
             grid, new_grid = new_grid, grid
@@ -45,7 +51,7 @@ def update_screen(grid):
     """
     clear_terminal()
     print bcolors.RED + ' GAME OF LIFE' + bcolors.ENDC
-    print bcolors.YELLOW + '-'*( len(grid[0]) + 5) + bcolors.ENDC
+    print bcolors.YELLOW + '-' * (len(grid[0]) + 5) + bcolors.ENDC
     print
     for i, line in enumerate(grid):
         print bcolors.BLUE + '%3d ' % i + bcolors.ENDC,
@@ -55,7 +61,7 @@ def update_screen(grid):
             else:
                 sys.stdout.write('0')
         print
-    print bcolors.YELLOW + '-' * ( len(grid[0]) + 5 ) + bcolors.ENDC
+    print bcolors.YELLOW + '-' * (len(grid[0]) + 5) + bcolors.ENDC
 
 def read_initial_conf(grid):
     """ read_initial_conf: Reads coordinates from the user to configure the
@@ -83,7 +89,7 @@ def read_initial_conf(grid):
                 coord = [int(cmd[i]) for i in range(2)]
             except:
                 sys.stdout.write(bcolors.RED + '[Invalid input] %s' %
-                                 (prompt % (config_step, last_coord)) 
+                                 (prompt % (config_step, last_coord))
                                  + bcolors.ENDC)
             last_coord = str(coord)
             config_step += 1
@@ -91,8 +97,56 @@ def read_initial_conf(grid):
         if done:
             break
         # Update grid (it actually toggles the grid position provided)
-        grid [coord[1]][coord[0]] = (grid[coord[1]][coord[0]] + 1) % 2
+        grid[coord[1]][coord[0]] = (grid[coord[1]][coord[0]] + 1) % 2
         update_screen(grid)
+
+def read_initial_conf_random(grid):
+    """ read_initial_conf_random: Reads coordinates randomly to configure the
+    initial game's grid.
+
+    key factors:
+        width
+        hieght
+        possible grid len
+        how many grid we want to fill
+    """
+    width, height = len(grid[0]), len(grid)
+    possible_grid = width * height
+    exclude = {}
+
+    prompt = 'how many you want to fill (possible grid is %s): '
+    sys.stdout.write(prompt % (possible_grid))
+    cmd = raw_input()
+    grid_want = int(cmd)
+    if grid_want > possible_grid:
+        print 'You are asking more than you can have'
+        sys.exit(0)
+
+    for i in range(grid_want):
+        rand_width, rand_height = get_random_grid(grid, exclude)
+
+        coord = [rand_width, rand_height]
+
+        # Update grid (it actually toggles the grid position provided)
+        grid[coord[1]][coord[0]] = (grid[coord[1]][coord[0]] + 1) % 2
+
+def get_random_grid(grid, exclude={}):
+    """
+    return random width and height for grid
+    exclude from previously occupied grid
+    #Todo improve performance
+    """
+    width, height = len(grid[0]), len(grid)
+
+    while True:
+        rand_width = random.randint(0, width - 1)
+        rand_height = random.randint(0, height - 1)
+        coord = str(rand_width) + str(rand_height)
+        if coord not in exclude:
+            exclude.setdefault(coord, coord)
+            break
+
+    return rand_width, rand_height
 
 def next_step(grid, new_grid):
     """ next_step: Computes the grid's next step and stores it in the list
@@ -121,9 +175,9 @@ def healthy_neighbors(x, y, grid):
     """
     live_neighbors = 0
     for i in range(-1, 2):
-        testx = (x+i) % len(grid[0])
+        testx = (x + i) % len(grid[0])
         for j in range(-1, 2):
-            testy = (y+j) % len(grid)
+            testy = (y + j) % len(grid)
             if j == 0 and i == 0:
                 continue
             if grid[testy][testx] == 1:
